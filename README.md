@@ -13,11 +13,11 @@ TumorIslet has been developed and maintained by the following contributors:
 
 - **Joanna Krawczyk** ([@joannakraw](https://github.com/joannakraw))
   - Developed layering, slicing, and cutting algorithms, as well as clustering methods specifically tailored for the analysis of tumor islets and their substructures.
-  - Master Thesis: [Title of the Master Thesis]
+  - Methods Results were presented in the Master Thesis: _TumorIslet - a Python package for statistical modelling and analysis of multiplex immunofluorescence data_
 
 - **Aleksandra Możwiłło** ([@mozewillo](https://github.com/mozewillo))
   - Developed methods for analyzing immune infiltration patterns and conducting neighborhood analysis within tissue samples.
-  - Master Thesis: [Title of the Master Thesis]
+  - Methods Results were presented in the Master Thesis: _Graph-based spatial methods to infer immune infiltration patterns in cancer multiplex immunofluorescence imaging_
 
 ## Features
 
