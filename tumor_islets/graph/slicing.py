@@ -16,6 +16,17 @@ from scipy.sparse import csgraph
 
 
 def plot_layers(sequences, n=None, legend=False, figsize=(16, 9)):
+    """
+    The function to visualize n first layers of a tumor islet as lines (without background color).
+    Args:
+        sequences: a list of lists (subsequent layers)
+        n: number of layers to plot
+        legend: boolean, if include legend (for large n, the legend is deprecated)
+        figsize: figure size in matplotlib, by default equal to (16, 9)
+
+    Returns:
+        a matplotlib figure visualizing first n layers from a sequence object
+    """
     if not n:
         n = len(sequences)
     if n > 30 and legend:
@@ -41,6 +52,19 @@ def plot_layers(sequences, n=None, legend=False, figsize=(16, 9)):
 
 
 def plot_layers_polygons(sequences, n=None, legend=False, figsize=(16, 9)):
+    """
+    This function visualizes n first selected layers of a tumor islet (if n is not defined,
+    then it selects first 30 layres) as polygons (lines with background coloring).
+
+    Args:
+        sequences: a list of lists (subsequent layers)
+        n: number of layers to plot
+        legend: boolean, if include legend (for large n, the legend is deprecated)
+        figsize: figure size in matplotlib, by default equal to (16, 9)
+
+    Returns:
+        a matplotlib figure visualizing n first layers as polygons.
+    """
     if not n:
         n = len(sequences)
     if n > 30 and legend:
@@ -66,6 +90,20 @@ def prepare_slicing_dataframe(
         filename,
         component_number,
 ):
+    """
+    This function prepares a dataframe to store the results of slicing algorithm. It stores
+    the positions and phenotypes of cells from a given tumor islet, adds an additional column
+    checking if a cell is immune or not. It creates empty columns for slicing results such as
+    steep_region_number, steepness, on_margin and layer_number.
+
+    Args:
+        points: a dictionary with two keys: positions and phenotypes, and lists as values
+        filename: a name of an analysed file, string
+        component_number: the number of an analysed tumor islet
+
+    Returns:
+        a pandas dataframe for storing the results of slicing algorithm.
+    """
     df = pd.DataFrame(columns=["filename", "component_number", "nucleus.x", "nucleus.y",
                                "phenotype", "is_immune", "on_margin", "layer_number",
                                "steep_region_number", "steepness"])
@@ -82,6 +120,21 @@ def compute_margin_sequences(
     CK_cells, 
     alpha=100,
 ):
+    """
+    The key function for computing the sequence of layers based on a list of CK cells positions.
+    It detects the alpha shape of a set of points using the helper_margin_slices function,
+    until there are less than 6 cells left inside a component.
+
+    Args:
+        CK_cells: a list of cell positions in a form [(x1, y1), ...., (xn, yn)]
+        alpha: the value of alpha for the alpha-shape algorithm
+
+    Returns:
+        a tuple with margin_sequences, position_to_margin and margin_layers.
+        The margin_sequences is a list of lists of all detected layers in a sequence form.
+        Position_to_margin is a dictionary with cell positions as keys and layer number as values.
+        Margin_layers is a dictionary mapping a layer number to a set of cells that form this layer.
+    """
     margin, margin_sequences = set(), []
     margin_layers, position_to_margin = {}, defaultdict(lambda: -1)
     layer_number, zero_margin = 0, 0
@@ -107,6 +160,21 @@ def assign_steepness(
         new_dist=50,
         min_steepness=5,
 ):
+    """
+    This function calculates the steepness attribute of a cell (maximum difference between the
+    layer number of a given cell A and all its neighbouring cells within a distance of new dist),
+    then it selects steep cells based on min_steepness parameter and their neighbours.
+
+    Args:
+        pos_to_mar: a dictionary mapping a cell position to a layer number
+        new_dist: the radius for a radius neighbourhood graph created on steep cells
+        min_steepness: the minimum value of a steepness attribute of a cell to be considered
+        as steep
+
+    Returns:
+        A tuple with pos_to_steepness - a dictionary mapping cell positions to steepness value,
+        and a list of all steep cells and their neighbours.
+    """
     points_margin = [k for k, v in pos_to_mar.items() if v >= 0]
     pos_to_steepness = defaultdict(int)
     steep_points, steep_neighbors = [], []
@@ -131,6 +199,19 @@ def detect_steep_regions(
     steep_plus_neighbors, 
     new_dist=50,
 ):
+    """
+    This function detects steep regions (connected components build on top of a radius
+    neighbourhood graph with radius = new_dist) using previously selected steep cells
+    along with their neighbours, using the connected_components function.
+
+    Args:
+        steep_plus_neighbors: a list of positions of steep cells and their neighbours
+        new_dist: the radius for a radius neighbourhood graph created on steep cells
+
+    Returns:
+        A dictionary mapping a cell position to a steep region number (and -1 if a cell
+        is not inside any steep region)
+    """
     graph_steep = radius_neighbors_graph(steep_plus_neighbors, new_dist,
                                          mode="connectivity", include_self=False)
     components_steep = csgraph.connected_components(graph_steep)
@@ -148,6 +229,21 @@ def assign_immune_cells(
         pos_to_steep,
         pos_to_steep_region,
 ):
+    """
+    This function assigns attributes to immune cells using cKD queries. For each immune cell
+    it finds its nearest neighbour from CK positive cells and assigns the attributes of this
+    nearest CK neighbour to the given immune cell.
+
+    Args:
+        df: a dataframe prepared to store slicing results
+        pos_to_mar: a dictionary mapping cell positions to layer number
+        pos_to_steep: a dictionary mapping cell positions to steepness value
+        pos_to_steep_region: a dictionary mapping cell positions to steep region number
+
+    Returns:
+        a pandas dataframe with assigned attributes such as layer number, steepness, steep_region_number
+        and on_margin.
+    """
     CK_points = [k for k, v in pos_to_mar.items() if v >= 0]
     df_immune = df[df["is_immune"] == True]
     ctree = scipy.spatial.cKDTree(CK_points)
@@ -177,8 +273,31 @@ def slice_tumor_islet(
         min_steepness=5,
         new_dist=50,
         plot=True,
-        old=True,
 ):
+    """
+    The final function to perform slicing of a tumor islet. It first prepares a dataframe
+    for slicing outputs, then computes the sequence of margins using the alpha-shape algorithm.
+    In the next steps, it calculates steepness of cells, detects steep regions and assigns
+    immune cells to layers and regions.
+
+    Args:
+        points_path: a path to a .json file with cell positions and phenotypes
+        filename: the name of the analysed file
+        component_number: the number of an analysed tumor islet
+        output_path: a prefix of the output path
+        alpha: the value of alpha for alpha-shape algorithm
+        min_steepness: the minimum value of steepness for a cell to be considered as a steep cell
+        new_dist: the value of radius for radius neighbourhood graph construction
+        plot: boolean, if True it creates additional visualizations during the execution
+
+    Returns:
+        A tuple with df_slicing, sequences and margin_slices. The df_slicing is a pandas
+        dataframe that where each row represents a cell, and columns stores all important
+        features computed by slicing algorithm. Sequences is a list of lists with layers
+        detected by the alpha-shape algorithm stored in a sequence form. Margin_slices is
+        a dictionary that maps a layer number to a set of cells that are assigned to this
+        specific layer.
+    """
     points = json.load(open(points_path))
 
     df_slicing = prepare_slicing_dataframe(points, filename, component_number)
@@ -191,10 +310,7 @@ def slice_tumor_islet(
         return 0
 
     start_time = time.perf_counter()
-    if old:
-        sequences, pos_to_mar, margin_slices = compute_margin_sequences(CK_cells, alpha=alpha)
-    # else:
-    #     sequences, pos_to_mar, margin_slices = compute_margin_sequences_new(CK_cells, alpha=alpha)
+    sequences, pos_to_mar, margin_slices = compute_margin_sequences(CK_cells, alpha=alpha)
     print(f"[COMPUTE_MARGIN_SEQUENCES (concave hull)] time: {time.perf_counter() - start_time}")
 
     if plot:
