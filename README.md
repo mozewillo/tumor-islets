@@ -1,12 +1,39 @@
-# tumor_islets
+# TumorIslet Python Package
 
-Package for IF data graph-based analysis
+## Description
+
+TumorIslet is a Python package designed for the analysis of imaging data, particularly in the context of multiplex immunofluorescence (mIF). This package provides a comprehensive set of tools for the detection and analysis of specific cellular substructures within tissue samples. TumorIslet uses graph-based approaches and graph properties to identify, quantify, and characterize various cellular components in complex tissue environments, with a focus on tumor islets and their substructures.
+
+## Contributors
+
+TumorIslet has been developed and maintained by the following contributors:
+
+- **Krzysztof Gogolewski** ([@storaged](https://github.com/storaged))
+  - Developed the core structure and foundation of the TumorIslet method.
+
+- **Joanna Krawczyk** ([@joannakraw](https://github.com/joannakraw))
+  - Developed layering, slicing, and cutting algorithms, as well as clustering methods specifically tailored for the analysis of tumor islets and their substructures.
+  - Master Thesis: [Title of the Master Thesis]
+
+- **Aleksandra Możwiłło** ([@mozewillo](https://github.com/mozewillo))
+  - Developed methods for analyzing immune infiltration patterns and conducting neighborhood analysis within tissue samples.
+  - Master Thesis: [Title of the Master Thesis]
+
+## Features
+
+- Graph-based analysis for tissue imaging data.
+- Detection and characterization of specific cellular substructures.
+- Quantitative assessment of tumor islets and their substructures based on cell type composition.
+- Analysis of immune infiltration patterns.
+- Neighborhood analysis within tissue samples.
+
+## Installation
 
 to install download package and run `pip install -e . `
 
 ('.' is path to directory where setup.py is )
 
-### Try running example on your sample
+## Try running example on your sample
 ```
 import tumor_islets.graph.Graph as graph
 import tumor_islets.plots.sample_all as plots
